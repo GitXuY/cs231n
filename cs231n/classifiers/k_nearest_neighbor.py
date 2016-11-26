@@ -95,15 +95,7 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
-      # dists[i] = LA.norm(np.tile(X[i], (num_train, 1)) - self.X_train)
-      dists[i] = LA.norm(X[i] - self.X_train)
-      print X[i].shape
-      print self.X_train.shape
-      aa = X[i] - self.X_train
-      print aa.shape
-      print LA.norm(aa).shape
-      print dists[i].shape
-      raise NameError('HiThere')
+      dists[i] = LA.norm(X[i] - self.X_train, axis=1)
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
@@ -116,9 +108,6 @@ class KNearestNeighbor(object):
 
     Input / Output: Same as compute_distances_two_loops
     """
-    num_test = X.shape[0]
-    num_train = self.X_train.shape[0]
-    dists = np.zeros((num_test, num_train)) 
     #########################################################################
     # TODO:                                                                 #
     # Compute the l2 distance between all test points and all training      #
@@ -131,14 +120,14 @@ class KNearestNeighbor(object):
     # HINT: Try to formulate the l2 distance using matrix multiplication    #
     #       and two broadcast sums.                                         #
     #########################################################################
-    aa = np.tile(X, (num_train, 1))
-    # aa = np.tile(X, (num_train, 1)) - np.tile(self.X_train, (1, num_test))
-    print aa.shape
-    raise NameError('HiThere')
+    AB = np.dot(X, self.X_train.T)  # 500 * 5000
+    A2 = np.matrix(np.square(X).sum(axis=1)).T  # 500 * 1
+    B2 = np.matrix(np.square(self.X_train).sum(axis=1))# 1 * 5000
+    dists = np.sqrt(- 2 * AB + A2 + B2)  # we use F-norm
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################
-    return dists
+    return np.asarray(dists)
 
   def predict_labels(self, dists, k=1):
     """

@@ -4,7 +4,7 @@
     <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredPackages">
         <value>
-          <list size="26">
+          <list size="37">
             <item index="0" class="java.lang.String" itemvalue="functools32" />
             <item index="1" class="java.lang.String" itemvalue="gnureadline" />
             <item index="2" class="java.lang.String" itemvalue="pyzmq" />
@@ -31,6 +31,17 @@
             <item index="23" class="java.lang.String" itemvalue="pyparsing" />
             <item index="24" class="java.lang.String" itemvalue="ipywidgets" />
             <item index="25" class="java.lang.String" itemvalue="notebook" />
+            <item index="26" class="java.lang.String" itemvalue="path.py" />
+            <item index="27" class="java.lang.String" itemvalue="qtconsole" />
+            <item index="28" class="java.lang.String" itemvalue="traitlets" />
+            <item index="29" class="java.lang.String" itemvalue="scipy" />
+            <item index="30" class="java.lang.String" itemvalue="ptyprocess" />
+            <item index="31" class="java.lang.String" itemvalue="python-dateutil" />
+            <item index="32" class="java.lang.String" itemvalue="cycler" />
+            <item index="33" class="java.lang.String" itemvalue="numpy" />
+            <item index="34" class="java.lang.String" itemvalue="pytz" />
+            <item index="35" class="java.lang.String" itemvalue="ipykernel" />
+            <item index="36" class="java.lang.String" itemvalue="nbconvert" />
           </list>
         </value>
       </option>
