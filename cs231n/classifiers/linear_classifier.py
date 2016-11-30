@@ -35,8 +35,8 @@ class LinearClassifier(object):
     # Run stochastic gradient descent to optimize W
     loss_history = []
     for it in xrange(num_iters):
-      X_batch = None
-      y_batch = None
+      # X_batch = None
+      # y_batch = None
 
       #########################################################################
       # TODO:                                                                 #
@@ -49,7 +49,9 @@ class LinearClassifier(object):
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
-      pass
+      random_index = np.random.choice(num_train, batch_size)
+      X_batch = X[random_index]
+      y_batch = y[random_index]
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -63,7 +65,7 @@ class LinearClassifier(object):
       # TODO:                                                                 #
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
-      pass
+      self.W += - learning_rate * grad  # perform parameter update
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -79,7 +81,7 @@ class LinearClassifier(object):
     data points.
 
     Inputs:
-    - X: D x N array of training data. Each column is a D-dimensional point.
+    - X: N * D array of training data. Each column is a D-dimensional point.
 
     Returns:
     - y_pred: Predicted labels for the data in X. y_pred is a 1-dimensional
