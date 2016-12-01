@@ -86,7 +86,7 @@ class TwoLayerNet(object):
       return scores
 
     # Compute the loss
-    loss = None
+    # loss = None
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -94,7 +94,17 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    pass
+    # Normalization trick to avoid numerical instability, per http://cs231n.github.io/linear-classify/#softmax
+    scores -= np.max(scores)
+    # Compute vector of stacked correct f-scores: [f(x_1)_{y_1}, ..., f(x_N)_{y_N}]
+    scores = np.exp(scores)
+    correct_class_score = scores[np.arange(N), y]
+    # demoninator: sum(exp(all the score)
+    demoninator = np.sum(scores, axis=1)
+    # loss = -sum all the minibatch( log(exp(correct_score) / demoninator))) / num_train + regularization
+    loss = -np.sum(np.log(correct_class_score / demoninator)) / N
+    # regularization
+    loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
