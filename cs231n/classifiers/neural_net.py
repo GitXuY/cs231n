@@ -68,13 +68,15 @@ class TwoLayerNet(object):
     N, D = X.shape
 
     # Compute the forward pass
-    scores = None
+    # scores = None
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    tmp = np.dot(X, W1) + b1
+    tmp[tmp < 0] = 0
+    scores = np.dot(tmp, W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
