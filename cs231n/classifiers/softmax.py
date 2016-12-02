@@ -1,5 +1,5 @@
 import numpy as np
-from random import shuffle
+
 
 def softmax_loss_naive(W, X, y, reg):
     """
@@ -29,23 +29,37 @@ def softmax_loss_naive(W, X, y, reg):
     # here, it is easy to run into numeric instability. Don't forget the        #
     # regularization!                                                           #
     #############################################################################
+    # Get shapes
     num_classes = W.shape[1]
     num_train = X.shape[0]
+
     for i in xrange(num_train):
-      f = np.array(X[i].dot(W))
-      f -= np.max(f)
-      scores = np.exp(f)
-      correct_class_score = scores[y[i]]
-      # print correct_class_score
-      loss += -np.log(correct_class_score / np.sum(scores))
-      count = 0
-      for j in xrange(num_classes):
-        if j == y[i]:
-          continue
-        else:
-          dW[:, j] += X[i] * scores[j] / np.sum(scores)
-          count += scores[j]
-      dW[:, y[i]] += -count * X[i] / np.sum(scores)
+        # Compute vector of scores
+        # f = np.array(X[i].dot(W))
+        f = np.dot(X[i], W)
+
+        # Normalization trick to avoid numerical instability, per http://cs231n.github.io/linear-classify/#softmax
+        f -= np.max(f)
+
+        exp_f = np.exp(f)
+        correct_class_score = exp_f[y[i]]
+        # print correct_class_score
+        loss += -np.log(correct_class_score / np.sum(exp_f))
+
+        # [methods 1]: use exp style
+        # count = 0
+        # for j in xrange(num_classes):
+        #   if j == y[i]:
+        #     continue
+        #   else:
+        #     dW[:, j] += X[i] * scores[j] / np.sum(scores)
+        #     count += scores[j]
+        # dW[:, y[i]] += -count * X[i] / np.sum(scores)
+
+        # [methods 2]: use probability style
+        for j in range(num_classes):
+            p = exp_f[j] / np.sum(exp_f)
+            dW[:, j] += (p - (j == y[i])) * X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -88,23 +102,30 @@ def softmax_loss_vectorized(W, X, y, reg):
     f -= np.max(f)
 
     # Compute vector of stacked correct f-scores: [f(x_1)_{y_1}, ..., f(x_N)_{y_N}]
-    scores = np.exp(f)
-    correct_class_score = scores[np.arange(num_train), y]
+    exp_f = np.exp(f)
+    correct_class_score = exp_f[np.arange(num_train), y]
 
-    # demoninator: sum(exp(all the score)
-    demoninator = np.sum(scores, axis=1)
+    # loss = -sum all the minibatch( log(exp(correct_score) / demoninator))) / num_train
+    demoninator = np.sum(exp_f, axis=1)
+    loss = -np.mean(np.log(correct_class_score / demoninator))
 
-    # loss = -sum all the minibatch( log(exp(correct_score) / demoninator))) / num_train + regularization
-    loss = -np.sum(np.log(correct_class_score / demoninator)) / num_train + 0.5 * reg * np.sum(W * W)
+    # [methods 1]: use exp style
+    # mat = scores.T
+    # counts = demoninator - correct_class_score  # counts[500,]
+    # mat[y, range(num_train)] = -counts[range(num_train)]  # mat[10*500]
+    # mat /= demoninator
+    # dW = (np.dot(mat, X)).T
 
-    mat = scores.T
-    counts = demoninator - correct_class_score  # counts[500,]
-
-    # for the correct class
-    mat[y, range(num_train)] = -counts[range(num_train)]  # mat[10*500]
-    mat /= demoninator
-    dW = (np.dot(mat, X)).T
+    # [methods 2]: use probability style
+    p = exp_f / np.sum(exp_f, axis=1, keepdims = True)
+    p[range(num_train), y] -= 1
+    dW = np.dot(X.T, p)
+    
+    # mean
     dW /= num_train
+
+    # Regularization
+    loss += 0.5 * reg * np.sum(W * W)
     dW += reg*W # dW[3073*10]
     #############################################################################
     #                          END OF YOUR CODE                                 #
