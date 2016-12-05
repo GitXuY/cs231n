@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class twolayernet(object):
+class TwoLayerNet(object):
   """
   a two-layer fully-connected neural network. the net has an input dimension of
   n, a hidden layer dimension of h, and performs classification over c classes.
@@ -39,7 +39,7 @@ class twolayernet(object):
     self.params['w2'] = std * np.random.randn(hidden_size, output_size)
     self.params['b2'] = np.zeros(output_size)
 
-  def loss(self, x, y=none, reg=0.0):
+  def loss(self, x, y=None, reg=0.0):
     """
     compute the loss and gradients for a two layer fully connected neural
     network.
@@ -53,10 +53,10 @@ class twolayernet(object):
     - reg: regularization strength.
 
     returns:
-    if y is none, return a matrix scores of shape (n, c) where scores[i, c] is
+    if y is None, return a matrix scores of shape (n, c) where scores[i, c] is
     the score for class c on input x[i].
 
-    if y is not none, instead return a tuple of:
+    if y is not None, instead return a tuple of:
     - loss: loss (data loss and regularization loss) for this batch of training
       samples.
     - grads: dictionary mapping parameter names to gradients of those parameters
@@ -68,7 +68,7 @@ class twolayernet(object):
     n, d = x.shape
 
     # compute the forward pass
-    # scores = none
+    # scores = None
     #############################################################################
     # todo: perform the forward pass, computing the class scores for the input. #
     # store the result in the scores variable, which should be an array of      #
@@ -82,11 +82,11 @@ class twolayernet(object):
     #############################################################################
 
     # if the targets are not given then jump out, we're done
-    if y is none:
+    if y is None:
       return scores
 
     # compute the loss
-    # loss = none
+    # loss = None
     #############################################################################
     # todo: finish the forward pass, and compute the loss. this should include  #
     # both the data loss and l2 regularization for w1 and w2. store the result  #
@@ -101,7 +101,7 @@ class twolayernet(object):
     # get unnormalized probabilities
     exp_scores = np.exp(scores)
     # normalize them for each example
-    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=true)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
     # compute the loss: average cross-entropy loss and regularization
     # the log probabilities assigned to the correct classes in each example
@@ -127,14 +127,14 @@ class twolayernet(object):
 
     # backpropate the gradient to the parameters
     # first backprop into parameters w2 and b2
-    dw2 = np.dot(hidden_layer.t, dscores)
+    dw2 = np.dot(hidden_layer.T, dscores)
     db2 = np.sum(dscores, axis=0)
     # next backprop into hidden layer
-    dhidden = np.dot(dscores, w2.t)
+    dhidden = np.dot(dscores, w2.T)
     # backprop the relu non-linearity
     dhidden[hidden_layer <= 0] = 0
     # finally into w,b
-    dw1 = np.dot(x.t, dhidden)
+    dw1 = np.dot(x.T, dhidden)
     db1 = np.sum(dhidden, axis=0)
 
     # add regularization gradient contribution
@@ -155,7 +155,7 @@ class twolayernet(object):
   def train(self, x, y, x_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
             reg=1e-5, num_iters=100,
-            batch_size=200, verbose=false):
+            batch_size=200, verbose=False):
     """
     train this neural network using stochastic gradient descent.
 
@@ -171,7 +171,7 @@ class twolayernet(object):
     - reg: scalar giving regularization strength.
     - num_iters: number of steps to take when optimizing.
     - batch_size: number of training examples to use per step.
-    - verbose: boolean; if true print progress during optimization.
+    - verbose: boolean; if True print progress during optimization.
     """
     num_train = x.shape[0]
     iterations_per_epoch = max(num_train / batch_size, 1)
@@ -182,8 +182,8 @@ class twolayernet(object):
     val_acc_history = []
 
     for it in xrange(num_iters):
-      x_batch = none
-      y_batch = none
+      x_batch = None
+      y_batch = None
 
       #########################################################################
       # todo: create a random minibatch of training data and labels, storing  #
@@ -252,7 +252,7 @@ class twolayernet(object):
       the elements of x. for all i, y_pred[i] = c means that x[i] is predicted
       to have class c, where 0 <= c < c.
     """
-    # y_pred = none
+    # y_pred = None
 
     ###########################################################################
     # todo: implement this function; it should be very simple!                #
