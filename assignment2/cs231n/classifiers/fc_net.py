@@ -85,7 +85,7 @@ class TwoLayerNet(object):
     X_reshape = np.reshape(X, (N,-1))
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
-    N, D = X.shape
+    N, D = X_reshape.shape
     # evaluate class scores with a 2-layer neural network
     hidden_layer = np.maximum(0, np.dot(X_reshape, W1) + b1)  # note, relu activation
     scores = np.dot(hidden_layer, W2) + b2
