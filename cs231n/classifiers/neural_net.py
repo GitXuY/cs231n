@@ -102,7 +102,6 @@ class twolayernet(object):
     exp_scores = np.exp(scores)
     # normalize them for each example
     probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=true)
-
     # compute the loss: average cross-entropy loss and regularization
     # the log probabilities assigned to the correct classes in each example
     corect_logprobs = -np.log(probs[np.arange(n), y])
@@ -112,7 +111,6 @@ class twolayernet(object):
     #############################################################################
     #                              end of your code                             #
     #############################################################################
-
     # backward pass: compute gradients
     grads = {}
     #############################################################################
