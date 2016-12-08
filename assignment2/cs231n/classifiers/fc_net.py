@@ -111,27 +111,16 @@ class TwoLayerNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     reg = self.reg
-    # normalization trick to avoid numerical instability, per http://cs231n.github.io/linear-classify/#softmax
-    scores -= np.max(scores)
-
-    # compute the class probabilities
-    # get unnormalized probabilities
-    exp_scores = np.exp(scores)
-    # normalize them for each example
-    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-
-    # compute the loss: average cross-entropy loss and regularization
-    # the log probabilities assigned to the correct classes in each example
-    corect_logprobs = -np.log(probs[np.arange(N), y])
-    data_loss = np.sum(corect_logprobs) / N
+    
+    # compute the loss: average cross-entropy loss and regularization loss
+    # average cross-entropy loss
+    data_loss, dscores = softmax_loss(scores, y)
+    # regularization loss
     reg_loss = 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+    # add
     loss = data_loss + reg_loss
     
-    # compute the gradient on scores
-    dscores = probs
-    dscores[range(N), y] -= 1
-    dscores /= N
-
+    
     # backpropate the gradient to the parameters
     # first backprop into parameters w2 and b2
     dW2 = np.dot(hidden_layer.T, dscores)
@@ -218,16 +207,11 @@ class FullyConnectedNet(object):
     # beta2, etc. Scale parameters should be initialized to one and shift      #
     # parameters should be initialized to zero.                                #
     ############################################################################
-    for i in range(self.num_layers):
-        if i == 0: # first layer
-            self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dims[0])
-            self.params['b1'] = np.zeros(hidden_dims[0])
-        elif i == self.num_layers-1: # last layer
-            self.params['W'+str(self.num_layers)] = weight_scale * np.random.randn(hidden_dims[-1], num_classes)
-            self.params['b'+str(self.num_layers)] = np.zeros(num_classes)
-        else:
-            self.params['W'+str(i+1)] = weight_scale * np.random.randn(hidden_dims[i-1], hidden_dims[i])
-            self.params['b'+str(i+1)] = np.zeros(hidden_dims[i])
+    dims = [input_dim] + hidden_dims + [num_classes]
+    for i in xrange(self.num_layers):
+      self.params['b%d' % (i+1)] = np.zeros(dims[i + 1])
+      self.params['W%d' % (i+1)] = np.random.randn(dims[i], dims[i + 1]) * weight_scale
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -254,12 +238,13 @@ class FullyConnectedNet(object):
       self.params[k] = v.astype(dtype)
 
 
+
   def loss(self, X, y=None):
     """
     Compute loss and gradient for the fully-connected net.
 
     Input / output: Same as TwoLayerNet above.
-    """
+    """            
     X = X.astype(self.dtype)
     mode = 'test' if y is None else 'train'
 
@@ -271,7 +256,7 @@ class FullyConnectedNet(object):
       for bn_param in self.bn_params:
         bn_param[mode] = mode
 
-    scores = None
+    # scores = None
     ############################################################################
     # TODO: Implement the forward pass for the fully-connected net, computing  #
     # the class scores for X and storing them in the scores variable.          #
@@ -284,33 +269,25 @@ class FullyConnectedNet(object):
     # self.bn_params[1] to the forward pass for the second batch normalization #
     # layer, etc.                                                              #
     ############################################################################
-    hidden_score = {}
-    hidden_cache = {}
-    num_middle_layers = self.num_layers-1
+    layer_output = {}
+    layer_cache = {}
     
-    #evaluate the hidden layers
-    x = X
-    w = self.params['W1']
-    b = self.params['b1']
-    for i in range(1, num_middle_layers+1):  # i=1 points to the first hidden layer
-        out, cache = affine_relu_forward(x, w, b)
-        hidden_score['x'+str(i)] = out
-        hidden_cache['cache'+str(i)] = cache
-        # update
-        x = out
-        w = self.params['W'+str(i+1)]
-        b = self.params['b'+str(i+1)]
-   
+    # evaluate till the last hidden layers
+    layer_output[0] = X
+    for i in range(1, self.num_layers):
+        layer_output[i], layer_cache[i] = affine_relu_forward(layer_output[i-1],
+                                                       self.params['W'+str(i)], 
+                                                       self.params['b'+str(i)])
+
+    W_last = 'W'+str(self.num_layers)
+    b_last = 'b'+str(self.num_layers)
     # evaluate the output layer
-    scores = np.dot(hidden_score['x'+str(num_middle_layers)], self.params['W'+str(self.num_layers)]) 
-    + self.params['b'+str(self.num_layers)]  # note, relu activation
-    s, cache_scores = affine_forward(hidden_score['x'+str(num_middle_layers)],
-                                          self.params['W'+str(self.num_layers)],
-                                         self.params['b'+str(self.num_layers)])
+    scores, output_cache = affine_forward(layer_output[self.num_layers-1],
+                                          self.params[W_last],
+                                          self.params[b_last])
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
-
     # If test mode return early
     if mode == 'test':
       return scores
@@ -329,58 +306,37 @@ class FullyConnectedNet(object):
     # automated tests, make sure that your L2 regularization includes a factor #
     # of 0.5 to simplify the expression for the gradient.                      #
     ###########################################################################
-    # normalization trick to avoid numerical instability, per http://cs231n.github.io/linear-classify/#softmax
-    scores -= np.max(scores)
+    # compute the loss: average cross-entropy loss and regularization loss
+    # average cross-entropy loss
+    data_loss, dscores = softmax_loss(scores, y)
 
-    # compute the class probabilities
-    # get unnormalized probabilities
-    exp_scores = np.exp(scores)
-    # normalize them for each example
-    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-    # compute the loss: average cross-entropy loss and regularization
-    # the log probabilities assigned to the correct classes in each example
-    N = X.shape[0]
-    corect_logprobs = -np.log(probs[np.arange(N), y])
-    data_loss = np.sum(corect_logprobs) / N
+    # regularization loss
     reg_loss = 0
     for i in range(1, self.num_layers+1):
         w = self.params['W'+str(i)]
         reg_loss += 0.5 * self.reg * np.sum(w * w)
+        
     loss = data_loss + reg_loss
-
-    # backward pass: compute gradients
-    grads = {}
-    reg = self.reg
     #############################################################################
     # todo: compute the backward pass, computing the derivatives of the weights #
     # and biases. store the results in the grads dictionary. for example,       #
     # grads['w1'] should store the gradient on w1, and be a matrix of same size #
     #############################################################################
-    # compute the gradient on scores
-    dscores = probs
-    dscores[range(N), y] -= 1
-    dscores /= N
-
     # backpropate the gradient to the parameters
-    # first backprop into the last affine layer
-    dW_last = np.dot(hidden_score['x'+str(num_middle_layers)].T, dscores)
-    db_last = np.sum(dscores, axis=0)
-    W_last = self.params['W'+str(self.num_layers)]
-    grads['W' + str(self.num_layers)] = dW_last + reg * W_last 
-    grads['b' + str(self.num_layers)] = db_last
-    mm, grads['W' + str(self.num_layers)], grads['b' + str(self.num_layers)] = affine_backward(s, cache_scores)
+    grads = {}
+    reg = self.reg
+    
+    # Backprop the last affine layer
+    dx = {}
+    dx[self.num_layers], grads[W_last], grads[b_last] = affine_backward(dscores, output_cache)
+    grads[W_last] += reg * self.params[W_last]
+
     
     # next backprop into L-1 hidden layer
-    dhidden = np.dot(dscores, W_last.T)
-    hidden = hidden_score['x'+str(num_middle_layers)]
-    for i in range(1, self.num_layers)[::-1]: # i means the index of layer
-        dx, dw, db = affine_relu_backward(dhidden, hidden_cache['cache'+str(i)])
-        dhidden = dx
-        
-        # add regularization gradient contribution
-        dw += reg * hidden_cache['cache'+str(i)][0][1]
-        grads['W' + str(i)] = dw
-        grads['b' + str(i)] = db
+    for i in reversed(range(1, self.num_layers)):
+      dx[i], grads['W%d' % i], grads['b%d' % i] = affine_relu_backward(dx[i + 1], layer_cache[i])
+      # add regularization gradient contribution
+      grads['W%d' % i] += self.reg * self.params['W%d' % i]
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
