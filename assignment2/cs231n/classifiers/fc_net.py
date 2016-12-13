@@ -210,8 +210,15 @@ class FullyConnectedNet(object):
     dims = [input_dim] + hidden_dims + [num_classes]
     for i in xrange(self.num_layers):
       self.params['b%d' % (i+1)] = np.zeros(dims[i + 1])
-      self.params['W%d' % (i+1)] = np.random.randn(dims[i], dims[i + 1]) * weight_scale
-
+      self.params['W%d' % (i+1)] = np.random.normal( 0, weight_scale, [dims[i], dims[i + 1]])
+      if self.use_batchnorm:
+          self.params['G%d' % (i+1)] = np.random.normal( 1 , 1e-3, dims[i + 1] )
+          self.params['B%d' % (i+1)] = np.zeros(dims[i + 1])
+            
+    # last layer do not use batch normalization
+    if self.use_batchnorm:
+        del self.params['G%d' % self.num_layers]
+        del self.params['B%d' % self.num_layers]
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -275,16 +282,29 @@ class FullyConnectedNet(object):
     # evaluate till the last hidden layers
     layer_output[0] = X
     for i in range(1, self.num_layers):
-        layer_output[i], layer_cache[i] = affine_relu_forward(layer_output[i-1],
-                                                       self.params['W'+str(i)], 
-                                                       self.params['b'+str(i)])
-
+        if self.use_batchnorm:
+            layer_output[i], layer_cache[i] = affine_bn_relu_forward(
+                                               layer_output[i-1],
+                                               self.params['W%d' % (i)], 
+                                               self.params['b%d' % (i)],
+                                               self.params['G%d' % (i)],
+                                               self.params['B%d' % (i)],
+                                               self.bn_params[i-1])
+            fc_cache, bn_cache, relu_cache = layer_cache[i]
+   
+        else:
+            layer_output[i], layer_cache[i] = affine_relu_forward(layer_output[i-1],
+                                                           self.params['W%d' % (i)], 
+                                                           self.params['b%d' % (i)])
     W_last = 'W'+str(self.num_layers)
     b_last = 'b'+str(self.num_layers)
+    
     # evaluate the output layer
     scores, output_cache = affine_forward(layer_output[self.num_layers-1],
                                           self.params[W_last],
                                           self.params[b_last])
+    # print scores
+    # raise Exception('stop here')
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -313,7 +333,7 @@ class FullyConnectedNet(object):
     # regularization loss
     reg_loss = 0
     for i in range(1, self.num_layers+1):
-        w = self.params['W'+str(i)]
+        w = self.params['W%d' % (i)]
         reg_loss += 0.5 * self.reg * np.sum(w * w)
         
     loss = data_loss + reg_loss
@@ -328,15 +348,20 @@ class FullyConnectedNet(object):
     
     # Backprop the last affine layer
     dx = {}
-    dx[self.num_layers], grads[W_last], grads[b_last] = affine_backward(dscores, output_cache)
+    dx[self.num_layers],grads[W_last],grads[b_last] = affine_backward(dscores, output_cache)
     grads[W_last] += reg * self.params[W_last]
-
     
     # next backprop into L-1 hidden layer
     for i in reversed(range(1, self.num_layers)):
-      dx[i], grads['W%d' % i], grads['b%d' % i] = affine_relu_backward(dx[i + 1], layer_cache[i])
-      # add regularization gradient contribution
-      grads['W%d' % i] += self.reg * self.params['W%d' % i]
+        if self.use_batchnorm:
+            dx[i], grads['W%d' % i], grads['b%d' % i], grads['G%d' % i], grads['B%d' % i] = \
+            affine_bn_relu_backward(dx[i+1], layer_cache[i])
+        else:
+            dx[i], grads['W%d' % i], grads['b%d' % i] = \
+            affine_relu_backward(dx[i + 1], layer_cache[i])
+      
+        # add regularization gradient contribution
+        grads['W%d' % i] += self.reg * self.params['W%d' % i]
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
