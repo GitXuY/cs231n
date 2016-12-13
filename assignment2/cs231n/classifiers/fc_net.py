@@ -296,6 +296,10 @@ class FullyConnectedNet(object):
             layer_output[i], layer_cache[i] = affine_relu_forward(layer_output[i-1],
                                                            self.params['W%d' % (i)], 
                                                            self.params['b%d' % (i)])
+        if self.use_dropout:
+            layer_output[i], drop_cache = dropout_forward(layer_output[i], self.dropout_param)
+            layer_cache['dpcache%d'%(i)] = drop_cache
+            
     W_last = 'W'+str(self.num_layers)
     b_last = 'b'+str(self.num_layers)
     
@@ -303,8 +307,6 @@ class FullyConnectedNet(object):
     scores, output_cache = affine_forward(layer_output[self.num_layers-1],
                                           self.params[W_last],
                                           self.params[b_last])
-    # print scores
-    # raise Exception('stop here')
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -353,6 +355,9 @@ class FullyConnectedNet(object):
     
     # next backprop into L-1 hidden layer
     for i in reversed(range(1, self.num_layers)):
+        if self.use_dropout:
+            dx[i+1] = dropout_backward(dx[i+1], layer_cache['dpcache%d'%(i)])
+            
         if self.use_batchnorm:
             dx[i], grads['W%d' % i], grads['b%d' % i], grads['G%d' % i], grads['B%d' % i] = \
             affine_bn_relu_backward(dx[i+1], layer_cache[i])
