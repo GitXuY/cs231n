@@ -47,7 +47,17 @@ class ThreeLayerConvNet(object):
     # hidden affine layer, and keys 'W3' and 'b3' for the weights and biases   #
     # of the output affine layer.                                              #
     ############################################################################
-    pass
+    # convolutional layer
+    self.params['W1'] = np.random.normal( 0, weight_scale, [num_filters, input_dim[0], filter_size, filter_size])
+    self.params['b1'] = np.zeros(num_filters)
+    
+    # affine layer 1
+    self.params['W2'] = np.random.normal( 0, weight_scale, [num_filters*input_dim[1]*input_dim[2]/4, hidden_dim])
+    self.params['b2'] = np.zeros(hidden_dim)
+    
+    # affine layer 2
+    self.params['W3'] = np.random.normal( 0, weight_scale, [hidden_dim, num_classes])
+    self.params['b3'] = np.zeros(num_classes)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -79,7 +89,10 @@ class ThreeLayerConvNet(object):
     # computing the class scores for X and storing them in the scores          #
     # variable.                                                                #
     ############################################################################
-    pass
+    
+    layer1_out, layer1_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+    layer2_out, layer2_cache = affine_relu_forward(layer1_out, W2, b2)
+    scores, output_cache     = affine_forward(layer2_out,W3,b3)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -94,7 +107,17 @@ class ThreeLayerConvNet(object):
     # data loss using softmax, and make sure that grads[k] holds the gradients #
     # for self.params[k]. Don't forget to add L2 regularization!               #
     ############################################################################
-    pass
+    # compute the loss: average cross-entropy loss and regularization loss
+    # average cross-entropy loss
+    data_loss, dscores = softmax_loss(scores, y)
+
+    # regularization loss
+    reg_loss = 0
+    for i in range(1, self.num_layers+1):
+        w = self.params['W%d' % (i)]
+        reg_loss += 0.5 * self.reg * np.sum(w * w)
+        
+    loss = data_loss + reg_loss
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
