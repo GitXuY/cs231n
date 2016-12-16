@@ -36,7 +36,7 @@ class ThreeLayerConvNet(object):
     self.params = {}
     self.reg = reg
     self.dtype = dtype
-    
+    self.num_layers = 3
     ############################################################################
     # TODO: Initialize weights and biases for the three-layer convolutional    #
     # network. Weights should be initialized from a Gaussian with standard     #
@@ -92,7 +92,7 @@ class ThreeLayerConvNet(object):
     
     layer1_out, layer1_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
     layer2_out, layer2_cache = affine_relu_forward(layer1_out, W2, b2)
-    scores, output_cache     = affine_forward(layer2_out,W3,b3)
+    scores, output_cache     = affine_forward(layer2_out, W3, b3)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -121,7 +121,25 @@ class ThreeLayerConvNet(object):
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
+    # backpropate the gradient to the parameters
+    grads = {}
+    reg = self.reg
     
+    # Backprop the last affine layer
+    dx = {}
+    dx[2] ,grads['W3'], grads['b3'] = affine_backward(dscores, output_cache)
+    grads['W3'] += reg * self.params['W3']
+    
+    # Backprop the first affine layer
+    dx[1] ,grads['W2'], grads['b2'] = affine_relu_backward(dx[2], layer2_cache)
+    
+    # Backprop the Conv layer
+    dx[0] ,grads['W1'], grads['b1'] = conv_relu_pool_backward(dx[1], layer1_cache)
+    
+    grads['W1'] += self.reg * self.params['W1']
+    grads['W2'] += self.reg * self.params['W2']
+    grads['W3'] += self.reg * self.params['W3']
+
     return loss, grads
   
   

@@ -139,6 +139,7 @@ def max_pool_forward_fast(x, pool_param):
   is not much faster than the naive method.
   """
   N, C, H, W = x.shape
+
   pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
   stride = pool_param['stride']
 
@@ -232,7 +233,6 @@ def max_pool_forward_im2col(x, pool_param):
   pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
   stride = pool_param['stride']
 
-  print H, pool_height
   assert (H - pool_height) % stride == 0, 'Invalid height'
   assert (W - pool_width) % stride == 0, 'Invalid width'
 

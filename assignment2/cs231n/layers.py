@@ -83,9 +83,7 @@ def relu_forward(x):
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
-  N = x.shape[0]
-  X_reshape = np.reshape(x, (N,-1))
-  out = np.maximum(0, X_reshape)  # note, relu activation
+  out = np.maximum(x,0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -576,11 +574,17 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
-  pass
+  N, C, H, W = x.shape
+  out        = np.zeros(x.shape)
+  cache      = {}
+    
+  for i in range(C):
+    bn_x = np.reshape(x[:,i,:,:], (N, -1))
+    bn_out, cache['bn%d' % i] = batchnorm_forward(bn_x, gamma[i], beta[i], bn_param)
+    out[:,i,:,:] = np.reshape(bn_out,(N,H,W))
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
   return out, cache
 
 
@@ -606,7 +610,17 @@ def spatial_batchnorm_backward(dout, cache):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
-  pass
+  N, C, H, W = dout.shape
+  dx         = np.zeros(dout.shape)
+  dgamma     = np.zeros(C)
+  dbeta      = np.zeros(C)
+
+  for i in range(C):
+      bn_dout = np.reshape(dout[:,i,:,:], (N, -1))
+      bn_dx, bn_dgamma,bn_dbeta = batchnorm_backward(bn_dout, cache['bn%d' % i])
+      dx[:,i,:,:] = np.reshape(bn_dx,(N,H,W))
+      dgamma[i] = np.sum(bn_dgamma)
+      dbeta[i] = np.sum(bn_dbeta)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
