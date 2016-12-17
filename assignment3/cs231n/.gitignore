@@ -1,3 +1,8 @@
 build/*
 im2col_cython.c
 im2col_cython.so
+tiny-imagenet-100-A*
+tiny-imagenet-100-B*
+tiny-100-A-pretrained/*
+coco_captioning*
+*.h5
