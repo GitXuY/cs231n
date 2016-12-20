@@ -135,18 +135,32 @@ class CaptioningRNN(object):
     # defined above to store loss and gradients; grads[k] should give the      #
     # gradients for self.params[k].                                            #
     ############################################################################
-    # compute loss
-    a_out, a_cache = affine_forward(features, W_proj, b_proj)
-    w_out, w_cache = word_embedding_forward(captions_in, W_embed)
-    r_out, r_cache = rnn_forward(w_out, a_out, Wx, Wh, b)
-    t_out, t_cache = temporal_affine_forward(r_out, W_vocab, b_vocab)
-    loss , dout    = temporal_softmax_loss(t_out, captions_out, mask, verbose=False)
-    
-    # compute gradients
-    dtx, grads['W_vocab'], grads['b_vocab']        = temporal_affine_backward(dout, t_cache)
-    drx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dtx, r_cache)
-    grads['W_embed']                               = word_embedding_backward(drx, w_cache)
-    dx, grads['W_proj'], grads['b_proj']           = affine_backward(dh0, a_cache)
+    if self.cell_type == 'rnn':
+        # compute loss
+        a_out, a_cache = affine_forward(features, W_proj, b_proj)
+        w_out, w_cache = word_embedding_forward(captions_in, W_embed)
+        r_out, r_cache = rnn_forward(w_out, a_out, Wx, Wh, b)
+        t_out, t_cache = temporal_affine_forward(r_out, W_vocab, b_vocab)
+        loss , dout    = temporal_softmax_loss(t_out, captions_out, mask, verbose=False)
+
+        # compute gradients
+        dtx, grads['W_vocab'], grads['b_vocab']        = temporal_affine_backward(dout, t_cache)
+        drx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dtx, r_cache)
+        grads['W_embed']                               = word_embedding_backward(drx, w_cache)
+        dx, grads['W_proj'], grads['b_proj']           = affine_backward(dh0, a_cache)
+    else:
+        # compute loss
+        a_out, a_cache = affine_forward(features, W_proj, b_proj)
+        w_out, w_cache = word_embedding_forward(captions_in, W_embed)
+        r_out, r_cache = lstm_forward(w_out, a_out, Wx, Wh, b)
+        t_out, t_cache = temporal_affine_forward(r_out, W_vocab, b_vocab)
+        loss , dout    = temporal_softmax_loss(t_out, captions_out, mask, verbose=False)
+
+        # compute gradients
+        dtx, grads['W_vocab'], grads['b_vocab']        = temporal_affine_backward(dout, t_cache)
+        drx, dh0, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(dtx, r_cache)
+        grads['W_embed']                               = word_embedding_backward(drx, w_cache)
+        dx, grads['W_proj'], grads['b_proj']           = affine_backward(dh0, a_cache)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -185,7 +199,6 @@ class CaptioningRNN(object):
     W_embed = self.params['W_embed']
     Wx, Wh, b = self.params['Wx'], self.params['Wh'], self.params['b']
     W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
-    
     ###########################################################################
     # TODO: Implement test-time sampling for the model. You will need to      #
     # initialize the hidden state of the RNN by applying the learned affine   #
@@ -209,11 +222,14 @@ class CaptioningRNN(object):
     ###########################################################################
     captions[0] = self._start
     next_h,_ = affine_forward(features, W_proj, b_proj)
-    print next_h.shape
+    next_c = np.zeros(next_h.shape)    
     
     for t in range(max_length):
         w_out, _ = word_embedding_forward(captions, W_embed)
-        next_h, _ = rnn_step_forward(w_out[:,t,:], next_h, Wx, Wh, b)
+        if self.cell_type == 'rnn':
+            next_h, _ = rnn_step_forward(w_out[:,t,:], next_h, Wx, Wh, b)
+        else:
+            next_h, next_c, _ = lstm_step_forward(w_out[:,t,:], next_h, next_c, Wx, Wh, b)
         N,H = next_h.shape
         scores, _ = affine_forward(next_h, W_vocab, b_vocab)
         sampled_captions = np.argmax(scores,axis=1);
